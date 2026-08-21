@@ -7,23 +7,43 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 )
 
-const (
-	StravaAPIURL   = ""
-	StravaOAuthURL = ""
-	ClientID       = ""
-	ClientSecret   = ""
-	RefreshToken   = ""
+var (
+	StravaAPIURL   string
+	StravaOAuthURL string
+	ClientID       string
+	ClientSecret   string
+	RefreshToken   string
 )
 
-type StravaTokenResponse struct {
-	TokenType    string `json:"token_type"`
-	AccessToken  string `json:"access_token"`
-	ExpiresAt    int64  `json:"expires_at"`
-	ExpiresIn    int    `json:"expires_in"`
-	RefreshToken string `json:"refresh_token"`
+func init() {
+	stravaAPIURL, ok := os.LookupEnv("STRAVA_API_URL")
+	if ok {
+		StravaAPIURL = stravaAPIURL
+	}
+
+	stravaOAuthURL, ok := os.LookupEnv("STRAVA_OAUTH_URL")
+	if ok {
+		StravaOAuthURL = stravaOAuthURL
+	}
+
+	clientID, ok := os.LookupEnv("CLIENT_ID")
+	if ok {
+		ClientID = clientID
+	}
+
+	clientSecret, ok := os.LookupEnv("CLIENT_SECRET")
+	if ok {
+		ClientSecret = clientSecret
+	}
+
+	refreshToken, ok := os.LookupEnv("REFRESH_TOKEN")
+	if ok {
+		RefreshToken = refreshToken
+	}
 }
 
 func retrieveAccessToken(client *http.Client) string {
@@ -78,7 +98,7 @@ func main() {
 		panic(err)
 	}
 
-	var activitiesData []Activity
+	var activitiesData []StravaActivity
 	if err = json.NewDecoder(resp.Body).Decode(&activitiesData); err != nil {
 		log.Fatalf("Failed to decode JSON: %v", err)
 	}
@@ -89,23 +109,4 @@ func main() {
 	}
 
 	// TODO: Export to DB
-}
-
-type Activity struct {
-	ID                 string  `json:"id_str"`
-	Name               string  `json:"name"`
-	Distance           float32 `json:"distance"`
-	MovingTime         int     `json:"moving_time"`
-	ElapsedTime        int     `json:"elapsed_time"`
-	TotalElevationGain float32 `json:"total_elevation_gain"`
-	Type               string  `json:"type"`
-	SportType          string  `json:"sport_type"`
-	StartDateLocal     string  `json:"start_date_local"`
-	AverageSpeed       float32 `json:"average_speed"`
-	MaxSpeed           float32 `json:"max_speed"`
-	AverageCadence     float32 `json:"average_cadence"`
-	AverageHeartrate   float32 `json:"average_heartrate"`
-	ElevHigh           float32 `json:"elev_high"`
-	ElevLow            float32 `json:"elev_low"`
-	SufferScore        float32 `json:"suffer_score"`
 }
