@@ -46,7 +46,7 @@ func init() {
 	}
 }
 
-func retrieveAccessToken(client *http.Client) string {
+func getAccessToken(client *http.Client) string {
 	data := url.Values{}
 	data.Set("client_id", ClientID)
 	data.Set("client_secret", ClientSecret)
@@ -81,10 +81,7 @@ func retrieveAccessToken(client *http.Client) string {
 	return tokenData.AccessToken
 }
 
-func main() {
-	client := &http.Client{}
-	accessToken := retrieveAccessToken(client)
-
+func getStravaActivities(client *http.Client, accessToken string) (activitiesData []StravaActivity) {
 	req, err := http.NewRequest("GET", StravaAPIURL+"/activities", nil)
 	if err != nil {
 		panic(err)
@@ -98,13 +95,20 @@ func main() {
 		panic(err)
 	}
 
-	var activitiesData []StravaActivity
 	if err = json.NewDecoder(resp.Body).Decode(&activitiesData); err != nil {
 		log.Fatalf("Failed to decode JSON: %v", err)
 	}
 	resp.Body.Close()
 
-	for _, a := range activitiesData {
+	return
+}
+
+func main() {
+	client := &http.Client{}
+	accessToken := getAccessToken(client)
+	activities := getStravaActivities(client, accessToken)
+
+	for _, a := range activities {
 		fmt.Printf("%v\n", a)
 	}
 
