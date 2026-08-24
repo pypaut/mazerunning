@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,6 +10,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	_ "github.com/jackc/pgx/v5/stdlib" // Registers "postgres" driver
 )
 
 var (
@@ -95,6 +98,8 @@ func getStravaActivities(client *http.Client, accessToken string) (activitiesDat
 		panic(err)
 	}
 
+	fmt.Printf("Response status: %s\n", resp.Status)
+
 	if err = json.NewDecoder(resp.Body).Decode(&activitiesData); err != nil {
 		log.Fatalf("Failed to decode JSON: %v", err)
 	}
@@ -103,7 +108,27 @@ func getStravaActivities(client *http.Client, accessToken string) (activitiesDat
 	return
 }
 
+func clientDB() (*sql.DB, error) {
+	dbHost := "db"
+	dbPort := "5432"
+	dbUser := "pypaut"
+	dbName := "mazerunning"
+	dbPassword := ""
+	dbPassword, exists := os.LookupEnv("POSTGRES_PASSWORD")
+	if !exists {
+		log.Fatalf("could not get postgres password")
+	}
+
+	connStr := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		dbUser, dbPassword, dbHost, dbPort, dbName,
+	)
+
+	return sql.Open("pgx", connStr)
+}
+
 func main() {
+	// Get some activities
 	client := &http.Client{}
 	accessToken := getAccessToken(client)
 	activities := getStravaActivities(client, accessToken)
@@ -112,5 +137,10 @@ func main() {
 		fmt.Printf("%v\n", a)
 	}
 
-	// TODO: Export to DB
+	// Connext to db
+	db, err := clientDB()
+	if err != nil {
+		log.Fatalf("Erreur d'ouverture de la connexion : %v", err)
+	}
+	defer db.Close()
 }

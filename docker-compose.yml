@@ -1,0 +1,67 @@
+services:
+  db:
+    image: postgres:16
+    container_name: database
+    restart: always
+    environment:
+      POSTGRES_USER: pypaut
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: mazerunning
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pypaut -d mazerunning"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-net
+
+  migration:
+    image: migrate/migrate
+    container_name: go-migrations
+    volumes:
+      - ./migrations:/migrations
+    entrypoint: >
+      sh -c "
+      /migrate -path=/migrations -database \"postgres://pypaut:\${POSTGRES_PASSWORD}@db:5432/mazerunning?sslmode=disable\" up
+      "
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-net
+
+  runscrapper:
+    build:
+      context: ./runscrapper
+      dockerfile: Dockerfile
+    container_name: go-code
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+    networks:
+      - app-net
+    # Force rebuild if code has changed
+    develop:
+      watch:
+        - action: rebuild
+          path: ./runscrapper
+
+volumes:
+  postgres_data:
+
+networks:
+  app-net:
+    driver: bridge
