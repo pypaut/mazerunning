@@ -1,6 +1,6 @@
 CREATE TABLE if NOT EXISTS activities (
     id SERIAL PRIMARY KEY,
-    id_str VARCHAR(255) NOT NULL,
+    id_str VARCHAR(255) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
     distance NUMERIC NOT NULL,
     moving_time INTEGER NOT NULL,
