@@ -109,12 +109,27 @@ func getStravaActivities(client *http.Client, accessToken string) (activitiesDat
 }
 
 func clientDB() (*sql.DB, error) {
-	dbHost := "db"
-	dbPort := "5432"
-	dbUser := "pypaut"
-	dbName := "mazerunning"
-	dbPassword := ""
-	dbPassword, exists := os.LookupEnv("POSTGRES_PASSWORD")
+	dbHost, exists := os.LookupEnv("DB_HOST")
+	if !exists {
+		log.Fatalf("could not get db host")
+	}
+
+	dbPort, exists := os.LookupEnv("DB_PORT")
+	if !exists {
+		log.Fatalf("could not get db port")
+	}
+
+	dbName, exists := os.LookupEnv("DB_NAME")
+	if !exists {
+		log.Fatalf("could not get db name")
+	}
+
+	dbUser, exists := os.LookupEnv("DB_USER")
+	if !exists {
+		log.Fatalf("could not get db user")
+	}
+
+	dbPassword, exists := os.LookupEnv("DB_PASSWORD")
 	if !exists {
 		log.Fatalf("could not get postgres password")
 	}
