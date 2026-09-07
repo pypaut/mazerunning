@@ -12,7 +12,7 @@ import (
 	"os"
 	"strings"
 
-	_ "github.com/jackc/pgx/v5/stdlib" // Registers "postgres" driver
+	_ "github.com/jackc/pgx/v5/stdlib" // Registers "pgx" driver
 )
 
 var (
