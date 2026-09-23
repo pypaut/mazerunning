@@ -82,7 +82,12 @@ func importHandler(db *sql.DB) http.HandlerFunc {
 
 func activitiesHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query("SELECT id, name, distance FROM activities")
+		rows, err := db.Query(`SELECT
+			id_str, name, distance, moving_time, elapsed_time,
+			total_elevation_gain, activity_type, sport_type, start_date_local,
+			average_speed, max_speed, average_cadence, average_heart_rate,
+			elev_high, elev_low, suffer_score
+			FROM activities`)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -92,7 +97,24 @@ func activitiesHandler(db *sql.DB) http.HandlerFunc {
 		var users []StravaActivity
 		for rows.Next() {
 			var u StravaActivity
-			if err := rows.Scan(&u.ID, &u.Name, &u.Distance); err != nil {
+			if err := rows.Scan(
+				&u.ID,
+				&u.Name,
+				&u.Distance,
+				&u.MovingTime,
+				&u.ElapsedTime,
+				&u.TotalElevationGain,
+				&u.Type,
+				&u.SportType,
+				&u.StartDateLocal,
+				&u.AverageSpeed,
+				&u.MaxSpeed,
+				&u.AverageCadence,
+				&u.AverageHeartrate,
+				&u.ElevHigh,
+				&u.ElevLow,
+				&u.SufferScore,
+			); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
