@@ -53,7 +53,9 @@ func getAccessToken(client *http.Client) string {
 	return tokenData.AccessToken
 }
 
-func getStravaActivities(client *http.Client, accessToken string) (activitiesData []StravaActivity) {
+func getStravaActivities(
+	client *http.Client, accessToken string,
+) (activitiesData []StravaActivity) {
 	req, err := http.NewRequest("GET", StravaAPIURL+"/activities", nil)
 	if err != nil {
 		panic(err)
