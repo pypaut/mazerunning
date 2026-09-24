@@ -83,7 +83,7 @@ func activitiesHandler(db *sql.DB) http.HandlerFunc {
 }
 
 func serve(db *sql.DB) error {
-	http.HandleFunc("/activities", activitiesHandler(db))
+	http.HandleFunc("/", activitiesHandler(db))
 	http.HandleFunc("/import", importHandler(db))
 	return http.ListenAndServe(":8080", nil)
 }

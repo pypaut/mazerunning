@@ -38,6 +38,6 @@ func main() {
 		panic(err)
 	}
 
-	log.Println("Server starting on http://localhost:8080/activities")
+	log.Println("Server starting on http://localhost:8080/")
 	log.Fatal(serve(db))
 }
