@@ -1,57 +1,499 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Activités</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strava Data Dashboard</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        strava: {
+                            orange: '#FC4C02',
+                            dark: '#242428',
+                            light: '#f5f5f5'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        table { border-collapse: collapse; width: 50%; margin: 20px 0; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
+        body {
+            background-color: #f7f7f9;
+        }
+        .glass-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+        }
     </style>
 </head>
-<body>
-	<a href="/import" style="appearance: button; text-decoration: none; padding: 10px; color: black; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px;">
-		Importer les activités
-	</a>
-    <h2>Activités</h2>
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Distance</th>
-			<th>MovingTime</th>
-			<th>ElapsedTime</th>
-			<th>TotalElevationGain</th>
-			<th>Type</th>
-			<th>SportType</th>
-			<th>StartDateLocal</th>
-			<th>AverageSpeed</th>
-			<th>MaxSpeed</th>
-			<th>AverageCadence</th>
-			<th>AverageHeartrate</th>
-			<th>ElevHigh</th>
-			<th>ElevLow</th>
-			<th>SufferScore</th>
-        </tr>
-        {{range .}}
-        <tr>
-            <td>{{.ID}}</td>
-            <td>{{.Name}}</td>
-            <td>{{.Distance}}</td>
-			<td>{{.MovingTime}}</td>
-			<td>{{.ElapsedTime}}</td>
-			<td>{{.TotalElevationGain}}</td>
-			<td>{{.Type}}</td>
-			<td>{{.SportType}}</td>
-			<td>{{.StartDateLocal}}</td>
-			<td>{{.AverageSpeed}}</td>
-			<td>{{.MaxSpeed}}</td>
-			<td>{{.AverageCadence}}</td>
-			<td>{{.AverageHeartrate}}</td>
-			<td>{{.ElevHigh}}</td>
-			<td>{{.ElevLow}}</td>
-			<td>{{.SufferScore}}</td>
-        </tr>
-        {{end}}
-    </table>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col font-sans">
+
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <!-- Strava-style Logo -->
+                    <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-person-running text-strava-orange text-2xl"></i>
+                        <span class="font-bold text-2xl tracking-tighter text-strava-dark uppercase">Athlete<span class="text-strava-orange">Dash</span></span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <label for="activityFilter" class="text-sm font-medium text-gray-600 hidden sm:block">Filter by:</label>
+                    <div class="relative">
+                        <select id="activityFilter" class="appearance-none bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-strava-orange focus:border-strava-orange block w-full p-2.5 pr-8 font-semibold shadow-sm transition-colors cursor-pointer outline-none">
+                            <option value="All">All Activities</option>
+                            <option value="Run">Running</option>
+                            <option value="Ride">Cycling</option>
+                            <option value="Swim">Swimming</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </div>
+                    </div>
+                    <img class="h-9 w-9 rounded-full border-2 border-strava-orange p-0.5 object-cover" src="https://placehold.co/100x100/242428/ffffff?text=U" alt="User avatar">
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+        <div class="mb-6 flex justify-between items-end">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Your Training</h1>
+                <p class="text-sm text-gray-500 mt-1" id="dateRangeText">Loading data...</p>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Distance Card -->
+            <div class="glass-card p-6 flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 opacity-5 text-strava-orange">
+                    <i class="fa-solid fa-route text-9xl"></i>
+                </div>
+                <div class="flex items-center gap-3 mb-2 z-10">
+                    <div class="bg-orange-100 p-2 rounded-lg text-strava-orange">
+                        <i class="fa-solid fa-road"></i>
+                    </div>
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Total Distance</h3>
+                </div>
+                <div class="mt-2 z-10">
+                    <span class="text-4xl font-black text-gray-900" id="totalDistance">0</span>
+                    <span class="text-lg font-medium text-gray-500 ml-1">km</span>
+                </div>
+            </div>
+
+            <!-- Time Card -->
+            <div class="glass-card p-6 flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 opacity-5 text-blue-500">
+                    <i class="fa-regular fa-clock text-9xl"></i>
+                </div>
+                <div class="flex items-center gap-3 mb-2 z-10">
+                    <div class="bg-blue-100 p-2 rounded-lg text-blue-600">
+                        <i class="fa-solid fa-stopwatch"></i>
+                    </div>
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Total Time</h3>
+                </div>
+                <div class="mt-2 z-10">
+                    <span class="text-4xl font-black text-gray-900" id="totalTime">0</span>
+                    <span class="text-lg font-medium text-gray-500 ml-1">hrs</span>
+                </div>
+            </div>
+
+            <!-- Elevation Card -->
+            <div class="glass-card p-6 flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 opacity-5 text-green-500">
+                    <i class="fa-solid fa-mountain text-9xl"></i>
+                </div>
+                <div class="flex items-center gap-3 mb-2 z-10">
+                    <div class="bg-green-100 p-2 rounded-lg text-green-600">
+                        <i class="fa-solid fa-arrow-trend-up"></i>
+                    </div>
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Elevation Gain</h3>
+                </div>
+                <div class="mt-2 z-10">
+                    <span class="text-4xl font-black text-gray-900" id="totalElevation">0</span>
+                    <span class="text-lg font-medium text-gray-500 ml-1">m</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Main Bar Chart (Monthly Distance) -->
+            <div class="glass-card p-6 lg:col-span-2">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-gray-800">Distance over Time</h2>
+                    <span class="text-xs font-semibold bg-gray-100 text-gray-600 py-1 px-2 rounded" id="chartYear">2026</span>
+                </div>
+                <div class="relative h-72 w-full">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Pie Chart (Activity Distribution) -->
+            <div class="glass-card p-6 lg:col-span-1">
+                <h2 class="text-lg font-bold text-gray-800 mb-4">Activity Breakdown</h2>
+                <div class="relative h-64 w-full flex justify-center items-center">
+                    <canvas id="typeChart"></canvas>
+                    <div id="noDataPie" class="absolute inset-0 flex items-center justify-center text-gray-400 hidden font-medium">
+                        No distribution data
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-6">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">Recent Activities</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b">
+                        <tr>
+                            <th scope="col" class="px-4 py-3">Type</th>
+                            <th scope="col" class="px-4 py-3">Date</th>
+                            <th scope="col" class="px-4 py-3">Distance</th>
+                            <th scope="col" class="px-4 py-3">Time</th>
+                            <th scope="col" class="px-4 py-3">Elevation</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activityTableBody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- 1. REAL DATA FROM DATABASE ---
+        const allActivities = [{{range .}}
+            {
+                id: "{{.ID}}",
+                type: "{{.Type}}",
+                sportType: "{{.SportType}}",
+                date: "{{.StartDateLocal}}",
+                distance: {{.Distance}},
+                duration: {{.MovingTime}},
+                elevation: {{.TotalElevationGain}}
+            },{{end}}
+        ];
+
+        let currentFilter = 'All';
+
+        // Chart instances
+        let monthlyChartInstance = null;
+        let typeChartInstance = null;
+
+        // Constants for styling
+        const chartColors = {
+            'Run': '#FC4C02', // Strava Orange
+            'Ride': '#242428', // Dark
+            'Swim': '#0097CD'  // Blue
+        };
+
+        // --- 2. UTILITY FUNCTIONS ---
+        const formatDuration = (totalSeconds) => {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            return hours > 0
+                ? `${hours}h ${minutes}m`
+                : `${minutes}m`;
+        };
+
+        const formatDecimal = (num) => {
+            return num.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        };
+
+        const getTypeIcon = (type) => {
+            switch(type) {
+                case 'Run': return '<i class="fa-solid fa-shoe-prints text-strava-orange"></i>';
+                case 'Ride': return '<i class="fa-solid fa-bicycle text-gray-800"></i>';
+                case 'Swim': return '<i class="fa-solid fa-person-swimming text-blue-500"></i>';
+                default: return '<i class="fa-solid fa-person-running text-strava-orange"></i>';
+            }
+        };
+
+        // --- 3. DATA PROCESSING ---
+        const processData = (filter) => {
+            const filteredData = filter === 'All'
+                ? allActivities
+                : allActivities.filter(a => a.type === filter);
+
+            // Summary metrics
+            let totalDist = 0;
+            let totalSecs = 0;
+            let totalElev = 0;
+            const months = new Set();
+
+            // Monthly aggregation (Jan-Dec)
+            const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthlyData = new Array(12).fill(0);
+
+            // Type aggregation
+            const typeCounts = { 'Run': 0, 'Ride': 0, 'Swim': 0 };
+
+            filteredData.forEach(act => {
+                totalDist += act.distance / 1000; // Convert meters to km
+                totalSecs += act.duration;
+                totalElev += act.elevation;
+
+                // Extract month index from date string (format: 2026-01-15T10:30:00Z)
+                const monthIndex = parseInt(act.date.split('-')[1]) - 1;
+                if(monthIndex >= 0 && monthIndex <= 11) {
+                    monthlyData[monthIndex] += act.distance / 1000;
+                    const year = act.date.split('-')[0];
+                    months.add(year);
+                }
+
+                typeCounts[act.type]++;
+            });
+
+            return {
+                filteredData,
+                totals: { totalDist, totalSecs, totalElev },
+                monthly: { labels: monthLabels, data: monthlyData },
+                types: typeCounts,
+                year: months.size > 0 ? Array.from(months).sort().join(' - ') : 'N/A'
+            };
+        };
+
+        // --- 4. UI UPDATES ---
+        const updateDashboard = () => {
+            const processed = processData(currentFilter);
+
+            // Update date range text
+            document.getElementById('dateRangeText').textContent = `Data from ${processed.year}`;
+            document.getElementById('chartYear').textContent = processed.year;
+
+            // 1. Update Summary Cards
+            document.getElementById('totalDistance').textContent = formatDecimal(processed.totals.totalDist);
+
+            const totalHours = (processed.totals.totalSecs / 3600).toFixed(1);
+            document.getElementById('totalTime').textContent = totalHours;
+
+            document.getElementById('totalElevation').textContent = processed.totals.totalElev.toLocaleString();
+
+            // 2. Render Monthly Bar Chart
+            renderMonthlyChart(processed.monthly.labels, processed.monthly.data);
+
+            // 3. Render Type Pie Chart
+            renderTypeChart(processed.types);
+
+            // 4. Update Table
+            updateTable(processed.filteredData.slice(0, 7)); // Show top 7 recent
+        };
+
+        const renderMonthlyChart = (labels, data) => {
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+
+            if (monthlyChartInstance) {
+                monthlyChartInstance.data.datasets[0].data = data;
+                monthlyChartInstance.update();
+                return;
+            }
+
+            Chart.defaults.font.family = 'Inter';
+            Chart.defaults.color = '#6b7280';
+
+            monthlyChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Distance (km)',
+                        data: data,
+                        backgroundColor: currentFilter === 'Swim' ? chartColors['Swim'] :
+                                         currentFilter === 'Ride' ? chartColors['Ride'] :
+                                         chartColors['Run'],
+                        borderRadius: 4,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#242428',
+                            padding: 12,
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y.toFixed(1) + ' km';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#f3f4f6',
+                                drawBorder: false,
+                            },
+                            border: { display: false }
+                        },
+                        x: {
+                            grid: { display: false },
+                            border: { display: false }
+                        }
+                    },
+                    animation: { duration: 500 }
+                }
+            });
+        };
+
+        const renderTypeChart = (typeCounts) => {
+            const ctx = document.getElementById('typeChart').getContext('2d');
+            const noDataMsg = document.getElementById('noDataPie');
+
+            const labels = [];
+            const data = [];
+            const bgColors = [];
+
+            // Only add types that have data or if filtering is strictly one type
+            ['Run', 'Ride', 'Swim'].forEach(t => {
+                if(typeCounts[t] > 0 || currentFilter === 'All') {
+                    labels.push(t);
+                    data.push(typeCounts[t]);
+                    bgColors.push(chartColors[t]);
+                }
+            });
+
+            // Handle edge case where filter results in 1 solid color
+            if (currentFilter !== 'All') {
+                labels.length = 0; data.length = 0; bgColors.length = 0;
+                labels.push(currentFilter);
+                data.push(1); // 100%
+                bgColors.push(chartColors[currentFilter]);
+            }
+
+            if (typeChartInstance) {
+                typeChartInstance.data.labels = labels;
+                typeChartInstance.data.datasets[0].data = data;
+                typeChartInstance.data.datasets[0].backgroundColor = bgColors;
+                typeChartInstance.update();
+                return;
+            }
+
+            typeChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: bgColors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 20, usePointStyle: true, pointStyle: 'circle' }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if(currentFilter !== 'All') return ' 100%';
+                                    let sum = 0;
+                                    let dataArr = context.chart.data.datasets[0].data;
+                                    dataArr.map(data => { sum += data; });
+                                    let percentage = (context.parsed * 100 / sum).toFixed(0) + "%";
+                                    return ' ' + percentage + ' of activities';
+                                }
+                            }
+                        }
+                    },
+                    animation: { duration: 500 }
+                }
+            });
+        };
+
+        const updateTable = (activities) => {
+            const tbody = document.getElementById('activityTableBody');
+            tbody.innerHTML = '';
+
+            if (activities.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">No recent activities found.</td></tr>`;
+                return;
+            }
+
+            activities.forEach(act => {
+                const tr = document.createElement('tr');
+                tr.className = "bg-white border-b hover:bg-gray-50 transition-colors";
+
+                // Format date nice
+                const d = new Date(act.date);
+                const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+                tr.innerHTML = `
+                    <td class="px-4 py-4 font-medium text-gray-900 flex items-center gap-2">
+                        <div class="w-6 text-center">${getTypeIcon(act.type)}</div>
+                        ${act.type}
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap">${dateStr}</td>
+                    <td class="px-4 py-4 font-semibold">${(act.distance / 1000).toFixed(1)} km</td>
+                    <td class="px-4 py-4">${formatDuration(act.duration)}</td>
+                    <td class="px-4 py-4">${act.elevation > 0 ? act.elevation + ' m' : '--'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        // --- 5. INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Setup Filter listener
+            document.getElementById('activityFilter').addEventListener('change', (e) => {
+                currentFilter = e.target.value;
+
+                // Update chart main color dynamically based on filter for a nice touch
+                if(monthlyChartInstance) {
+                   const ds = monthlyChartInstance.data.datasets[0];
+                   ds.backgroundColor = currentFilter === 'Swim' ? chartColors['Swim'] :
+                                        currentFilter === 'Ride' ? chartColors['Ride'] :
+                                        chartColors['Run'];
+                }
+
+                updateDashboard();
+            });
+
+            // Initial render
+            updateDashboard();
+        });
+
+    </script>
 </body>
 </html>
