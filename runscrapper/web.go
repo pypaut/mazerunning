@@ -22,7 +22,7 @@ var tmpl = template.Must(template.New("activities").Parse(`
 	<a href="/import" style="appearance: button; text-decoration: none; padding: 10px; color: black; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px;">
 		Importer les activités
 	</a>
-    <h2>Activities</h2>
+    <h2>Activités</h2>
     <table>
         <tr>
             <th>ID</th>
@@ -87,7 +87,8 @@ func activitiesHandler(db *sql.DB) http.HandlerFunc {
 			total_elevation_gain, activity_type, sport_type, start_date_local,
 			average_speed, max_speed, average_cadence, average_heart_rate,
 			elev_high, elev_low, suffer_score
-			FROM activities`)
+			FROM activities
+			ORDER BY start_date_local DESC`)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
