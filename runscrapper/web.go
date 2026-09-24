@@ -2,70 +2,14 @@ package main
 
 import (
 	"database/sql"
+	"embed"
 	"html/template"
 	"log"
 	"net/http"
 )
 
-var tmpl = template.Must(template.New("activities").Parse(`
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Activités</title>
-    <style>
-        table { border-collapse: collapse; width: 50%; margin: 20px 0; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-    </style>
-</head>
-<body>
-	<a href="/import" style="appearance: button; text-decoration: none; padding: 10px; color: black; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px;">
-		Importer les activités
-	</a>
-    <h2>Activités</h2>
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Distance</th>
-			<th>MovingTime</th>
-			<th>ElapsedTime</th>
-			<th>TotalElevationGain</th>
-			<th>Type</th>
-			<th>SportType</th>
-			<th>StartDateLocal</th>
-			<th>AverageSpeed</th>
-			<th>MaxSpeed</th>
-			<th>AverageCadence</th>
-			<th>AverageHeartrate</th>
-			<th>ElevHigh</th>
-			<th>ElevLow</th>
-			<th>SufferScore</th>
-        </tr>
-        {{range .}}
-        <tr>
-            <td>{{.ID}}</td>
-            <td>{{.Name}}</td>
-            <td>{{.Distance}}</td>
-			<td>{{.MovingTime}}</td>
-			<td>{{.ElapsedTime}}</td>
-			<td>{{.TotalElevationGain}}</td>
-			<td>{{.Type}}</td>
-			<td>{{.SportType}}</td>
-			<td>{{.StartDateLocal}}</td>
-			<td>{{.AverageSpeed}}</td>
-			<td>{{.MaxSpeed}}</td>
-			<td>{{.AverageCadence}}</td>
-			<td>{{.AverageHeartrate}}</td>
-			<td>{{.ElevHigh}}</td>
-			<td>{{.ElevLow}}</td>
-			<td>{{.SufferScore}}</td>
-        </tr>
-        {{end}}
-    </table>
-</body>
-</html>
-`))
+//go:embed templates/*
+var templateFS embed.FS
 
 func importHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -125,6 +69,11 @@ func activitiesHandler(db *sql.DB) http.HandlerFunc {
 		if err := rows.Err(); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+
+		tmpl, err := template.ParseFS(templateFS, "templates/*.html")
+		if err != nil {
+			panic(err)
 		}
 
 		if err := tmpl.Execute(w, users); err != nil {
