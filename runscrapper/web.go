@@ -83,6 +83,7 @@ func activitiesHandler(db *sql.DB) http.HandlerFunc {
 }
 
 func serve(db *sql.DB) error {
+	log.Println("Server starting on http://localhost:8080/")
 	http.HandleFunc("/", activitiesHandler(db))
 	http.HandleFunc("/import", importHandler(db))
 	return http.ListenAndServe(":8080", nil)
