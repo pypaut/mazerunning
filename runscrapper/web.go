@@ -18,7 +18,7 @@ func importHandler(db *sql.DB) http.HandlerFunc {
 
 		client := &http.Client{}
 		accessToken := getAccessToken(client)
-		activities := getStravaActivities(client, accessToken)
+		activities := getStravaActivities(client, accessToken, knownActivityIDs(db))
 
 		if err := insertActivitiesIntoDB(r.Context(), db, activities); err != nil {
 			log.Printf("could not insert activities: %v", err)
