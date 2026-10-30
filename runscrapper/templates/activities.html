@@ -169,7 +169,7 @@
         </div>
 
         <div class="glass-card p-6">
-            <h2 class="text-lg font-bold text-gray-800 mb-4">Activités récentes</h2>
+            <h2 class="text-lg font-bold text-gray-800 mb-4">Activités</h2>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left text-gray-500">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b">
@@ -308,7 +308,7 @@
             renderTypeChart(processed.types);
 
             // 4. Update Table
-            updateTable(processed.filteredData.slice(0, 7)); // Show top 7 recent
+            updateTable(processed.filteredData);
         };
 
         const renderMonthlyChart = (labels, data) => {
