@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Tableau de bord</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -62,13 +62,13 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <label for="activityFilter" class="text-sm font-medium text-gray-600 hidden sm:block">Filter by:</label>
+                    <label for="activityFilter" class="text-sm font-medium text-gray-600 hidden sm:block">Filtrer par :</label>
                     <div class="relative">
                         <select id="activityFilter" class="appearance-none bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-strava-orange focus:border-strava-orange block w-full p-2.5 pr-8 font-semibold shadow-sm transition-colors cursor-pointer outline-none">
-                            <option value="All">All Activities</option>
-                            <option value="Run">Running</option>
-                            <option value="Ride">Cycling</option>
-                            <option value="Swim">Swimming</option>
+                            <option value="All">Toutes les activités</option>
+                            <option value="Run">Course à pied</option>
+                            <option value="Ride">Cyclisme</option>
+                            <option value="Swim">Natation</option>
                             <option value="Yoga">Yoga</option>
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
@@ -122,7 +122,7 @@
                 </div>
                 <div class="mt-2 z-10">
                     <span class="text-4xl font-black text-gray-900" id="totalTime">0</span>
-                    <span class="text-lg font-medium text-gray-500 ml-1">hrs</span>
+                    <span class="text-lg font-medium text-gray-500 ml-1">h</span>
                 </div>
             </div>
 
@@ -135,7 +135,7 @@
                     <div class="bg-green-100 p-2 rounded-lg text-green-600">
                         <i class="fa-solid fa-arrow-trend-up"></i>
                     </div>
-                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Elevation Gain</h3>
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Dénivelé positif</h3>
                 </div>
                 <div class="mt-2 z-10">
                     <span class="text-4xl font-black text-gray-900" id="totalElevation">0</span>
@@ -148,7 +148,7 @@
             <!-- Main Bar Chart (Monthly Distance) -->
             <div class="glass-card p-6 lg:col-span-2">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold text-gray-800">Distance over Time</h2>
+                    <h2 class="text-lg font-bold text-gray-800">Distance dans le temps</h2>
                     <span class="text-xs font-semibold bg-gray-100 text-gray-600 py-1 px-2 rounded" id="chartYear">2026</span>
                 </div>
                 <div class="relative h-72 w-full">
@@ -158,18 +158,18 @@
 
             <!-- Pie Chart (Activity Distribution) -->
             <div class="glass-card p-6 lg:col-span-1">
-                <h2 class="text-lg font-bold text-gray-800 mb-4">Activity Breakdown</h2>
+                <h2 class="text-lg font-bold text-gray-800 mb-4">Répartition des activités</h2>
                 <div class="relative h-64 w-full flex justify-center items-center">
                     <canvas id="typeChart"></canvas>
                     <div id="noDataPie" class="absolute inset-0 flex items-center justify-center text-gray-400 hidden font-medium">
-                        No distribution data
+                        Aucune donnée de répartition
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="glass-card p-6">
-            <h2 class="text-lg font-bold text-gray-800 mb-4">Recent Activities</h2>
+            <h2 class="text-lg font-bold text-gray-800 mb-4">Activités récentes</h2>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left text-gray-500">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b">
@@ -177,8 +177,8 @@
                             <th scope="col" class="px-4 py-3">Type</th>
                             <th scope="col" class="px-4 py-3">Date</th>
                             <th scope="col" class="px-4 py-3">Distance</th>
-                            <th scope="col" class="px-4 py-3">Time</th>
-                            <th scope="col" class="px-4 py-3">Elevation</th>
+                            <th scope="col" class="px-4 py-3">Durée</th>
+                            <th scope="col" class="px-4 py-3">Dénivelé</th>
                         </tr>
                     </thead>
                     <tbody id="activityTableBody">
@@ -228,7 +228,7 @@
         };
 
         const formatDecimal = (num) => {
-            return num.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            return num.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
         };
 
         const getTypeIcon = (type) => {
@@ -254,7 +254,7 @@
             const months = new Set();
 
             // Monthly aggregation (Jan-Dec)
-            const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthLabels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
             const monthlyData = new Array(12).fill(0);
 
             // Type aggregation
@@ -290,7 +290,7 @@
             const processed = processData(currentFilter);
 
             // Update date range text
-            document.getElementById('dateRangeText').textContent = `Data from ${processed.year}`;
+            document.getElementById('dateRangeText').textContent = `Données de ${processed.year}`;
             document.getElementById('chartYear').textContent = processed.year;
 
             // 1. Update Summary Cards
@@ -435,7 +435,7 @@
                                     let dataArr = context.chart.data.datasets[0].data;
                                     dataArr.map(data => { sum += data; });
                                     let percentage = (context.parsed * 100 / sum).toFixed(0) + "%";
-                                    return ' ' + percentage + ' of activities';
+                                    return ' ' + percentage + ' des activités';
                                 }
                             }
                         }
@@ -450,7 +450,7 @@
             tbody.innerHTML = '';
 
             if (activities.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">No recent activities found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">Aucune activité récente trouvée.</td></tr>`;
                 return;
             }
 
@@ -460,7 +460,7 @@
 
                 // Format date nice
                 const d = new Date(act.date);
-                const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const dateStr = d.toLocaleDateString('fr-FR', { month: 'short', day: 'numeric', year: 'numeric' });
 
                 tr.innerHTML = `
                     <td class="px-4 py-4 font-medium text-gray-900 flex items-center gap-2">
