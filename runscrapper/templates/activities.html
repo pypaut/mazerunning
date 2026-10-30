@@ -209,6 +209,8 @@
         ];
 
         let currentFilter = 'All';
+        let selectedYear = null; // null = auto-pick most recent year present
+        let focusedMonth = null; // null = no focus, 0-11 = month index within selectedYear
 
         // Chart instances
         let monthlyChartInstance = null;
@@ -245,47 +247,52 @@
             }
         };
 
+        // Month labels shared between data processing and UI display.
+        const monthLabels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+
         // --- 3. DATA PROCESSING ---
         const processData = (filter) => {
-            const filteredData = filter === 'All'
+            const byType = filter === 'All'
                 ? allActivities
                 : allActivities.filter(a => a.type === filter);
 
-            // Summary metrics
-            let totalDist = 0;
-            let totalSecs = 0;
-            let totalElev = 0;
-            const months = new Set();
+            // Years present in the (type-filtered) data, for nav bounds.
+            const years = [...new Set(byType.map(a => a.date.split('-')[0]))].sort();
+            const defaultYear = years.length ? years[years.length - 1] : null;
+            const year = selectedYear || defaultYear;
 
-            // Monthly aggregation (Jan-Dec)
-            const monthLabels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-            const monthlyData = new Array(12).fill(0);
+            // Selected-year slice — the chart always shows this year's 12 months.
+            const yearData = year ? byType.filter(a => a.date.split('-')[0] === year) : [];
 
-            // Type aggregation
+            // Focus narrows cards/pie/table to a single month of that year.
+            const viewData = focusedMonth !== null
+                ? yearData.filter(a => parseInt(a.date.split('-')[1]) - 1 === focusedMonth)
+                : yearData;
+
+            // Summary metrics from the (possibly focused) view set.
+            let totalDist = 0, totalSecs = 0, totalElev = 0;
             const typeCounts = { 'Run': 0, 'Ride': 0, 'Swim': 0, 'Yoga': 0 };
-
-            filteredData.forEach(act => {
-                totalDist += act.distance / 1000; // Convert meters to km
+            viewData.forEach(act => {
+                totalDist += act.distance / 1000;
                 totalSecs += act.duration;
                 totalElev += act.elevation;
-
-                // Extract month index from date string (format: 2026-01-15T10:30:00Z)
-                const monthIndex = parseInt(act.date.split('-')[1]) - 1;
-                if(monthIndex >= 0 && monthIndex <= 11) {
-                    monthlyData[monthIndex] += act.distance / 1000;
-                    const year = act.date.split('-')[0];
-                    months.add(year);
-                }
-
                 typeCounts[act.type]++;
             });
 
+            // Monthly aggregation: 12 buckets for the selected year only.
+            const monthlyData = new Array(12).fill(0);
+            yearData.forEach(act => {
+                const mi = parseInt(act.date.split('-')[1]) - 1;
+                if (mi >= 0 && mi <= 11) monthlyData[mi] += act.distance / 1000;
+            });
+
             return {
-                filteredData,
+                viewData,
                 totals: { totalDist, totalSecs, totalElev },
                 monthly: { labels: monthLabels, data: monthlyData },
                 types: typeCounts,
-                year: months.size > 0 ? Array.from(months).sort().join(' - ') : 'N/A'
+                year,
+                years,
             };
         };
 
@@ -293,9 +300,33 @@
         const updateDashboard = () => {
             const processed = processData(currentFilter);
 
-            // Update date range text
-            document.getElementById('dateRangeText').textContent = `Données de ${processed.year}`;
-            document.getElementById('chartYear').textContent = processed.year;
+            // Header: selected year + optional focus reset link.
+            const focusBadge = focusedMonth !== null
+                ? ` — focus : ${monthLabels[focusedMonth]} ${processed.year} <button id="clearMonthFocus" class="ml-2 text-strava-orange hover:underline text-xs">réinitialiser</button>`
+                : '';
+            document.getElementById('dateRangeText').innerHTML = `Données de ${processed.year || 'N/A'}${focusBadge}`;
+
+            // Year badge becomes prev/next nav.
+            const yearEl = document.getElementById('chartYear');
+            const yrs = processed.years;
+            const yi = yrs.indexOf(processed.year);
+            yearEl.innerHTML = `
+                <button id="prevYear" class="px-1 ${yi <= 0 ? 'opacity-30 cursor-default' : 'hover:text-strava-orange'}">◀</button>
+                <span class="mx-1">${processed.year || '—'}</span>
+                <button id="nextYear" class="px-1 ${yi >= yrs.length - 1 ? 'opacity-30 cursor-default' : 'hover:text-strava-orange'}">▶</button>
+            `;
+            if (yi > 0) document.getElementById('prevYear').onclick = () => {
+                selectedYear = yrs[yi - 1]; focusedMonth = null; updateDashboard();
+            };
+            if (yi < yrs.length - 1) document.getElementById('nextYear').onclick = () => {
+                selectedYear = yrs[yi + 1]; focusedMonth = null; updateDashboard();
+            };
+
+            const clearBtn = document.getElementById('clearMonthFocus');
+            if (clearBtn) clearBtn.addEventListener('click', () => {
+                focusedMonth = null;
+                updateDashboard();
+            });
 
             // 1. Update Summary Cards
             document.getElementById('totalDistance').textContent = formatDecimal(processed.totals.totalDist);
@@ -312,7 +343,7 @@
             renderTypeChart(processed.types);
 
             // 4. Update Table
-            updateTable(processed.filteredData);
+            updateTable(processed.viewData);
         };
 
         const renderMonthlyChart = (labels, data) => {
@@ -344,6 +375,15 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            focusedMonth = elements[0].index;
+                            updateDashboard();
+                        }
+                    },
+                    onHover: (e, elements) => {
+                        e.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+                    },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
@@ -509,6 +549,8 @@
                 });
                 allActivities.length = 0;
                 allActivities.push(...byId.values());
+                selectedYear = null;
+                focusedMonth = null;
                 updateDashboard();
             } catch (e) {
                 alert('Synchronisation échouée : ' + e.message);
@@ -524,6 +566,8 @@
             // Setup Filter listener
             document.getElementById('activityFilter').addEventListener('change', (e) => {
                 currentFilter = e.target.value;
+                selectedYear = null; // re-pick most recent year for the new filter set
+                focusedMonth = null;
 
                 // Update chart main color dynamically based on filter for a nice touch
                 if(monthlyChartInstance) {
