@@ -2,7 +2,9 @@
 
 - [ ] List all activities (not just recent)
 - [ ] Add an `Import` frontend button
+- [ ] Translate to french
+- [ ] Deploy online
 
 # Bugs
 
-- [ ] `import` keeps duplicates
+- [X] `import` keeps duplicates
