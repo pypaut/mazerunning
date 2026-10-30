@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"embed"
+	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
@@ -13,14 +14,20 @@ var templateFS embed.FS
 
 func importHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
 		client := &http.Client{}
 		accessToken := getAccessToken(client)
 		activities := getStravaActivities(client, accessToken)
 
-		err := insertActivitiesIntoDB(r.Context(), db, activities)
-		if err != nil {
-			log.Fatalf("could not insert activities: %v", err)
+		if err := insertActivitiesIntoDB(r.Context(), db, activities); err != nil {
+			log.Printf("could not insert activities: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]any{"ok": false, "error": err.Error()})
+			return
 		}
+
+		json.NewEncoder(w).Encode(map[string]any{"ok": true, "activities": activities})
 	}
 }
 

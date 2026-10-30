@@ -1,8 +1,8 @@
 # Features
 
-- [ ] List all activities (not just recent)
-- [ ] Add an `Import` frontend button
-- [ ] Translate to french
+- [X] List all activities (not just recent)
+- [X] Add an `Import` frontend button
+- [X] Translate to french
 - [ ] Deploy online
 
 # Bugs

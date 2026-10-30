@@ -62,6 +62,10 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
+                    <button id="syncBtn" class="flex items-center gap-2 bg-strava-orange hover:bg-orange-600 text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                        <i id="syncIcon" class="fa-solid fa-arrows-rotate"></i>
+                        <span>Synchroniser</span>
+                    </button>
                     <label for="activityFilter" class="text-sm font-medium text-gray-600 hidden sm:block">Filtrer par :</label>
                     <div class="relative">
                         <select id="activityFilter" class="appearance-none bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-strava-orange focus:border-strava-orange block w-full p-2.5 pr-8 font-semibold shadow-sm transition-colors cursor-pointer outline-none">
@@ -477,6 +481,45 @@
         };
 
         // --- 5. INITIALIZATION ---
+        const syncBtn = document.getElementById('syncBtn');
+        const syncIcon = document.getElementById('syncIcon');
+
+        const sync = async () => {
+            syncBtn.disabled = true;
+            syncIcon.classList.add('fa-spin');
+            try {
+                const resp = await fetch('/import', { method: 'POST' });
+                const payload = await resp.json();
+                if (!resp.ok || !payload.ok) {
+                    alert('Synchronisation échouée : ' + (payload.error || resp.statusText));
+                    return;
+                }
+                const byId = new Map();
+                allActivities.forEach(a => byId.set(a.id, a));
+                (payload.activities || []).forEach(a => {
+                    byId.set(a.id_str, {
+                        id: a.id_str,
+                        type: a.type,
+                        sportType: a.sport_type,
+                        date: a.start_date_local,
+                        distance: a.distance,
+                        duration: a.moving_time,
+                        elevation: a.total_elevation_gain
+                    });
+                });
+                allActivities.length = 0;
+                allActivities.push(...byId.values());
+                updateDashboard();
+            } catch (e) {
+                alert('Synchronisation échouée : ' + e.message);
+            } finally {
+                syncIcon.classList.remove('fa-spin');
+                syncBtn.disabled = false;
+            }
+        };
+
+        syncBtn.addEventListener('click', sync);
+
         document.addEventListener('DOMContentLoaded', () => {
             // Setup Filter listener
             document.getElementById('activityFilter').addEventListener('change', (e) => {
