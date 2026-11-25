@@ -220,6 +220,7 @@
         const chartColors = {
             'Run': '#FC4C02',  // Strava Orange
             'Ride': '#242428', // Dark
+            'VirtualRide': '#242428', // Dark
             'Swim': '#0097CD', // Blue
             'Yoga': '#b62bfb'  // Dark
         };
@@ -241,6 +242,7 @@
             switch(type) {
                 case 'Run': return '<i class="fa-solid fa-shoe-prints text-strava-orange"></i>';
                 case 'Ride': return '<i class="fa-solid fa-bicycle text-gray-800"></i>';
+                case 'VirtualRide': return '<i class="fa-solid fa-bicycle text-gray-800"></i>';
                 case 'Swim': return '<i class="fa-solid fa-person-swimming text-blue-500"></i>';
                 case 'Yoga': return '<i class="fa-solid fa-person-through-window text-purple-500">‌</i>';
                 default: return '<i class="fa-solid fa-person-running text-strava-orange"></i>';
@@ -254,7 +256,7 @@
         const processData = (filter) => {
             const byType = filter === 'All'
                 ? allActivities
-                : allActivities.filter(a => a.type === filter);
+                : allActivities.filter(a => a.type === filter || (filter === 'Ride' && a.type === 'VirtualRide'));
 
             // Years present in the (type-filtered) data, for nav bounds.
             const years = [...new Set(byType.map(a => a.date.split('-')[0]))].sort();
@@ -271,7 +273,7 @@
 
             // Summary metrics from the (possibly focused) view set.
             let totalDist = 0, totalSecs = 0, totalElev = 0;
-            const typeCounts = { 'Run': 0, 'Ride': 0, 'Swim': 0, 'Yoga': 0 };
+            const typeCounts = { 'Run': 0, 'Ride': 0, 'VirtualRide': 0, 'Swim': 0, 'Yoga': 0 };
             viewData.forEach(act => {
                 totalDist += act.distance / 1000;
                 totalSecs += act.duration;
@@ -426,7 +428,7 @@
             const bgColors = [];
 
             // Only add types that have data or if filtering is strictly one type
-            ['Run', 'Ride', 'Swim', 'Yoga'].forEach(t => {
+            ['Run', 'Ride', 'VirtualRide', 'Swim', 'Yoga'].forEach(t => {
                 if(typeCounts[t] > 0 || currentFilter === 'All') {
                     labels.push(t);
                     data.push(typeCounts[t]);
