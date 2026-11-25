@@ -15,15 +15,15 @@ if [ -z "$SECRET_JSON" ]; then
 fi
 
 echo "2. Downloading latest Docker image..."
-docker compose pull
+podman compose pull
 
 echo "3. Restarting containers with secrets..."
 (
   eval $(echo "$SECRET_JSON" | jq -r 'to_entries[] | "export \(.key)=\(.value | @sh)"')
-  docker compose up -d --remove-orphans
+  podman compose up -d --remove-orphans
 )
 
 echo "4. Cleaning orphan images..."
-docker image prune -f
+podman image prune -f
 
 echo "Successfully deployed."
