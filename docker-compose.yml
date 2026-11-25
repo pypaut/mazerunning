@@ -39,9 +39,7 @@ services:
       - app-net
 
   runscrapper:
-    build:
-      context: ./runscrapper
-      dockerfile: Dockerfile
+    image: ghcr.io/pypaut/runscrapper:latest
     container_name: go-code
     ports:
       - "127.0.0.1:8080:8080"
@@ -52,11 +50,6 @@ services:
         condition: service_completed_successfully
     networks:
       - app-net
-    # Force rebuild if code has changed
-    develop:
-      watch:
-        - action: rebuild
-          path: ./runscrapper
     restart: unless-stopped
 
 volumes:
