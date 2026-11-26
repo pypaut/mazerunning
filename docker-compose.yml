@@ -11,8 +11,13 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    env_file:
-      - .env
+    secrets:
+      - source: DB_USER
+        type: env
+      - source: DB_NAME
+        type: env
+      - source: DB_PASSWORD
+        type: env
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pypaut -d mazerunning"]
       interval: 3s
@@ -30,8 +35,17 @@ services:
       sh -c "
       /migrate -path=/migrations -database \"postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable\" up
       "
-    env_file:
-      - .env
+    secrets:
+      - source: DB_HOST
+        type: env
+      - source: DB_PORT
+        type: env
+      - source: DB_USER
+        type: env
+      - source: DB_NAME
+        type: env
+      - source: DB_PASSWORD
+        type: env
     depends_on:
       db:
         condition: service_healthy
@@ -41,10 +55,29 @@ services:
   runscrapper:
     image: ghcr.io/pypaut/runscrapper:latest
     container_name: go-code
+    secrets:
+      - source: STRAVA_API_URL
+        type: env
+      - source: STRAVA_OAUTH_URL
+        type: env
+      - source: CLIENT_ID
+        type: env
+      - source: CLIENT_SECRET
+        type: env
+      - source: REFRESH_TOKEN
+        type: env
+      - source: DB_HOST
+        type: env
+      - source: DB_PORT
+        type: env
+      - source: DB_USER
+        type: env
+      - source: DB_NAME
+        type: env
+      - source: DB_PASSWORD
+        type: env
     ports:
       - "127.0.0.1:8080:8080"
-    env_file:
-      - .env
     depends_on:
       migration:
         condition: service_completed_successfully
@@ -58,3 +91,25 @@ volumes:
 networks:
   app-net:
     driver: bridge
+
+secrets:
+  STRAVA_API_URL:
+    external: true
+  STRAVA_OAUTH_URL:
+    external: true
+  CLIENT_ID:
+    external: true
+  CLIENT_SECRET:
+    external: true
+  REFRESH_TOKEN:
+    external: true
+  DB_HOST:
+    external: true
+  DB_PORT:
+    external: true
+  DB_USER:
+    external: true
+  DB_NAME:
+    external: true
+  DB_PASSWORD:
+    external: true
